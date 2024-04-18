@@ -1,6 +1,7 @@
 from paho.mqtt import client as mqtt_client
 import json
 import time
+from datetime import datetime
 from schema.aggregated_data_schema import AggregatedDataSchema
 from file_datasource import FileDatasource
 import config
@@ -29,7 +30,7 @@ def publish(client, topic, datasource, delay):
     while True:
         time.sleep(delay)
         data = datasource.read()
-        msg = AggregatedDataSchema().dumps(data)
+        msg = json.dumps(data, default=lambda o: o.isoformat() if isinstance(o, datetime) else str(o))
         result = client.publish(topic, msg)
         # result: [0, 1]
         status = result[0]
@@ -44,7 +45,7 @@ def run():
     # Prepare mqtt client
     client = connect_mqtt(config.MQTT_BROKER_HOST, config.MQTT_BROKER_PORT)
     # Prepare datasource
-    datasource = FileDatasource("data/data.csv", "data/gps_data.csv")
+    datasource = FileDatasource("data/accelerometer.csv", "data/gps.csv")
     # Infinity publish data
     publish(client, config.MQTT_TOPIC, datasource, config.DELAY)
 
